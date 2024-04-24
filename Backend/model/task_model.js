@@ -27,6 +27,10 @@ const taskSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true
+  },
+  taskStatus:{
+    type:String,
+    
   }
 });
 

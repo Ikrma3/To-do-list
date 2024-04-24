@@ -5,6 +5,7 @@ const cors = require('cors');
 //const shop_route = require('./router/shop_router');
 const app = express();
 app.use(express.json());
+app.use(cors());
 const port = process.env.PORT || 4000;
 app.use('/', task_router);
 mongoose.connect('mongodb+srv://ikrmaiftikhar3:B7GpVVPKopEVqDtr@cluster0.j4swxh4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')

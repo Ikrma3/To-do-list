@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 exports.createTask = async (req, res) => {
-    const { taskName, taskDetails, taskStatus, deadline, priority, userId } = req.body;
-  
+    const { taskName, taskDetails, deadline, priority, userId } = req.body;
+    const taskStatus = 'pending';
     try {
       let order;
   
@@ -33,7 +33,7 @@ exports.createTask = async (req, res) => {
         deadline,
         priority,
         order,
-        userId // Associate the task with the provided userId
+        userId// Associate the task with the provided userId
       });
   
       // Send response with status 201 and success message
@@ -49,46 +49,38 @@ exports.createTask = async (req, res) => {
   exports.getTaskDataForDisplay = async (req, res) => {
     try {
       const userId = req.params.userId; // Assuming userId is passed as a route parameter
-      
       // Fetch task IDs, names, statuses, priorities, and deadlines for the specified user
       const tasks = await Task.find({ userId }, { _id: 1, taskName: 1, taskStatus: 1, priority: 1, deadline: 1 })
                                .sort({ order: 1, deadline: 1 });
-  
       res.status(200).json(tasks);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Server error' });
     }
-};
-
-  
-  
-  
-  exports.getTaskDetailsById = async (req, res) => {
-    const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
-  
-    try {
+  };
+exports.getTaskDetailsById = async (req, res) => {
+  const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
+  try {
       // Fetch the task details from the database by ID
       const task = await Task.findById(taskId);
-  
+
       // Check if the task exists
       if (!task) {
-        return res.status(404).json({ error: 'Task not found' });
+          return res.status(404).json({ error: 'Task not found' });
       }
-  
       // Extract task details for display
       const { taskName, taskDetails, deadline } = task;
-  
+
       // Send response with the task details
       res.status(200).json({ taskName, taskDetails, deadline });
-    } catch (err) {
+  } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Server error' });
-    }
-  };
+  }
+};
   exports.updateTask = async (req, res) => {
     const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
-    const { taskDetails, deadline } = req.body;
+    const { deadline} = req.body;
   
     try {
       // Fetch the task from the database by ID
@@ -100,13 +92,38 @@ exports.createTask = async (req, res) => {
       }
   
       // Update task details if provided
-      if (taskDetails) {
-        task.taskDetails = taskDetails;
-      }
-  
       // Update deadline if provided
       if (deadline) {
         task.deadline = deadline;
+      }
+      // Save the updated task to the database
+      await task.save();
+  
+      // Send response indicating successful update
+      res.status(200).json({ message: 'Task updated successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  };
+  exports.updateStatus = async (req, res) => {
+    console.log("Update call");
+    const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
+    const { status } = req.body;
+    console.log(status);
+    try {
+      // Fetch the task from the database by ID
+      const task = await Task.findById(taskId);
+  
+      // Check if the task exists
+      if (!task) {
+        return res.status(404).json({ error: 'Task not found' });
+      }
+  
+      // Update task details if provided
+      // Update deadline if provided
+      if (status) {
+        task.taskStatus = status;
       }
       // Save the updated task to the database
       await task.save();
@@ -165,7 +182,10 @@ exports.createTask = async (req, res) => {
     }
   };
   exports.login = async (req, res) => {
+    console.log("Login");
+   
     const { email, password } = req.body;
+    console.log(email, password);
     const secretKey = crypto.randomBytes(32).toString('hex');
     try {
       // Check if the user exists
