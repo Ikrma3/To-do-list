@@ -55,24 +55,47 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Add Task',
+         centerTitle: true,
+        title:
+         Text(
+          'Task',
+            //textAlign: TextAlign.center,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.black,
+            fontSize: 20,
           ),
         ),
+         bottom: PreferredSize(
+      preferredSize: Size.fromHeight(1.0), // Set the height of the Divider
+      child: Divider(
+        height: 1.0, // Set the height of the Divider
+        thickness: 1.0, // Set the thickness of the Divider
+        color: Colors.grey, // Set the color of the Divider
       ),
+    ),
+      ),
+      
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text("Add a task",
+              style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      fontSize: 35,
+                        fontFamily: 'Poppins',
+                      ),
+                      textAlign: TextAlign.center,),
+                      SizedBox(height: 14,),
               Row(
                 children: [
+                  
                   Text(
-                    'Name:',
+                    'Name',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -80,7 +103,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                     ),
                   ),
-                  SizedBox(width: 8),
+                  SizedBox(width: 10),
                   Expanded(
                     child: TextField(
                       controller: _taskNameController,
@@ -95,7 +118,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               Row(
                 children: [
                   Text(
-                    'Detail:',
+                    'Detail',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -105,12 +128,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   SizedBox(width: 8),
                   Expanded(
                     child: TextField(
-                      controller: _taskDetailsController,
-                      maxLines: null, // Allow multiple lines
-                      decoration: InputDecoration(
-                        hintText: 'Task Details',
-                      ),
-                    ),
+  controller: _taskDetailsController,
+  maxLines: null, // Allow multiple lines
+  decoration: InputDecoration(
+    hintText: 'Task Details',
+    border: OutlineInputBorder(), // Add an outline border
+    contentPadding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 10.0), // Add padding
+  ),
+),
+
                   ),
                 ],
               ),
@@ -136,6 +162,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         }
                       });
                     },
+                     activeTrackColor: Colors.green,// Change the color of the thumb to green
+
                   ),
                 ],
               ),
@@ -250,19 +278,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   );
                 }).toList(),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 36),
               SizedBox(
                 width: double.infinity, // Make button full width
                 child: ElevatedButton(
-                  onPressed: _submitTask,
-                  child: Text('Done',
-                  style: TextStyle(
-                  color: Colors.white,
-                ),),
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.black, // Change button color to black
-                  ),
-                ),
+  onPressed: _submitTask,
+  child: Text(
+    'Done',
+    style: TextStyle(
+      color: Colors.white,
+    ),
+  ),
+  style: ElevatedButton.styleFrom(
+    primary: Colors.black, // Change button color to black
+    shape: RoundedRectangleBorder( // Set button shape to box
+      borderRadius: BorderRadius.circular(10), 
+      // Set border radius to 0 for box shape
+    ),
+     minimumSize: Size(double.infinity, 50),
+  ),
+),
+
               ),
             ],
           ),

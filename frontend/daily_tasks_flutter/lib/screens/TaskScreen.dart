@@ -88,13 +88,12 @@ class _TaskScreenState extends State<TaskScreen> {
   }
 
   String _formatDeadline(String deadline) {
-  // Parse the deadline string to a DateTime object
-  DateTime parsedDeadline = DateTime.parse(deadline);
-  // Format the DateTime object to include both date and time
-  String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm').format(parsedDeadline);
-  return formattedDeadline;
-}
-
+    // Parse the deadline string to a DateTime object
+    DateTime parsedDeadline = DateTime.parse(deadline);
+    // Format the DateTime object to include both date and time
+    String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm').format(parsedDeadline);
+    return formattedDeadline;
+  }
 
   Future<void> deleteTask(String taskId) async {
     final response = await http.delete(Uri.parse('http://192.168.18.79:4000/tasks/$taskId'));
@@ -130,48 +129,49 @@ class _TaskScreenState extends State<TaskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tasks'),
         actions: [
+          
+          TextButton( // Button to toggle between showing and hiding completed tasks
+            onPressed: () {
+              setState(() {
+                showCompletedTasks = !showCompletedTasks;
+              });
+            },
+            child: Text(showCompletedTasks ? 'Hide Completed' : 'Show Completed'),
+          ),
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () {
               signOutAndNavigateToLoginScreen(context);
             },
           ),
-          IconButton( // Button to toggle between showing and hiding completed tasks
-            icon: Icon(showCompletedTasks ? Icons.visibility_off : Icons.visibility),
-            onPressed: () {
-              setState(() {
-                showCompletedTasks = !showCompletedTasks;
-              });
-            },
-          ),
         ],
+        
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : isError
           ? Center(child: Text('Error fetching tasks'))
           : ListView(
-              children: [
-                _buildTasksHeading('Today',),
-                _buildTaskList(
-                    'Today', tasks.where((task) => isTodayDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
-                SizedBox(height: 20),
-                _buildTasksHeading('Tomorrow'),
-                _buildTaskList('Tomorrow',
-                    tasks.where((task) => isTomorrowDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
-                SizedBox(height: 20),
-                _buildTasksHeading('Other'),
-                _buildTaskList('Other',
-                    tasks.where((task) => !isTodayDeadline(task.deadline) && !isTomorrowDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
-                SizedBox(height: 20),
-                _buildTasksHeading('Date Passed'),
-                _buildTaskList('Date Passed', tasks.where((task) => isMissedDeadline(task.deadline) && (showCompletedTasks ||task.status != 'complete')).toList()),
-              ],
-            ),
-  floatingActionButton: FloatingActionButton(
-  onPressed: () {
+        children: [
+          _buildTasksHeading('Today',),
+          _buildTaskList(
+              'Today', tasks.where((task) => isTodayDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
+          SizedBox(height: 20),
+          _buildTasksHeading('Tomorrow'),
+          _buildTaskList('Tomorrow',
+              tasks.where((task) => isTomorrowDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
+          SizedBox(height: 20),
+          _buildTasksHeading('Other'),
+          _buildTaskList('Other',
+              tasks.where((task) => !isTodayDeadline(task.deadline) && !isTomorrowDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
+          SizedBox(height: 20),
+          _buildTasksHeading('Date Passed'),
+          _buildTaskList('Date Passed', tasks.where((task) => isMissedDeadline(task.deadline) && (showCompletedTasks ||task.status != 'complete')).toList()),
+        ],
+      ),
+floatingActionButton: GestureDetector(
+  onTap: () {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -182,11 +182,11 @@ class _TaskScreenState extends State<TaskScreen> {
             topRight: Radius.circular(20.0),
           ),
           child: Container(
-            height: 650 ,//MediaQuery.of(context).size.height , // Adjust the height as needed
+            height: 650,
             child: AddTaskScreen(
               userId: widget.userId,
               onTaskAdded: () {
-                fetchTasks(); // Callback function to refresh task list
+                fetchTasks();
               },
             ),
           ),
@@ -194,10 +194,18 @@ class _TaskScreenState extends State<TaskScreen> {
       },
     );
   },
-  child: Icon(Icons.add),
+  child: CircleAvatar(
+    backgroundColor: Colors.black,
+    child: Icon(
+      Icons.add,
+      color: Colors.white,
+    ),
+  ),
 ),
 
-    );
+
+
+      );
   }
 
   void showTaskOptionsDialog(Task task) {
@@ -276,91 +284,93 @@ class _TaskScreenState extends State<TaskScreen> {
         headingText,
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontFamily: "Poppins",
+          fontSize: 30,
         ),
       ),
     );
   }
 
-Widget _buildTaskList(String category, List<Task> tasks) {
-  return ListView.builder(
-    shrinkWrap: true,
-    physics: ClampingScrollPhysics(),
-    itemCount: tasks.length,
-    itemBuilder: (context, index) {
-      final task = tasks[index];
-      if (category == 'Date Passed' || !isMissedDeadline(task.deadline)) {
-        // Show tasks with missed deadlines under the "Date Passed" section
-        return ListTile(
-          leading: Checkbox(
-            value: task.status == 'complete',
-            onChanged: (value) {
-              setState(() {
-                toggleTaskStatus(task.id, value!);
-                task.status = value ? 'complete' : 'pending';
-              });
-            },
-          ),
-          title: Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TaskDetailsScreen(taskId: task.id),
+  Widget _buildTaskList(String category, List<Task> tasks) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: ClampingScrollPhysics(),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        if (category == 'Date Passed' || !isMissedDeadline(task.deadline)) {
+          // Show tasks with missed deadlines under the "Date Passed" section
+          return ListTile(
+            leading: Checkbox(
+              value: task.status == 'complete',
+              onChanged: (value) {
+                setState(() {
+                  toggleTaskStatus(task.id, value!);
+                  task.status = value ? 'complete' : 'pending';
+                });
+              },
+              activeColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5.0), // Adjust the radius as needed
+              ),
+            ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TaskDetailsScreen(taskId: task.id),
+                        ),
+                      );
+                    },
+                    style: ButtonStyle(
+                      alignment: Alignment.centerLeft,
+                    ),
+                    child: Text(
+                      task.name,
+                      style: TextStyle(
+                        color: task.status == 'complete' ? Colors.grey : Color.fromARGB(207, 29, 29, 29), // Change color to grey for completed tasks
+                        fontSize: 16, // Adjust the font size as needed
+                        decoration: task.status == 'complete' ? TextDecoration.lineThrough : null,
                       ),
-                    );
-                  },
-                  style: ButtonStyle(
-                    alignment: Alignment.centerLeft,
-                  ),
-                  child: Text(
-                    task.name,
-                    style: TextStyle(
-                      color: task.status == 'complete' ? Colors.grey : Colors.black, // Change color to grey for completed tasks
-                      fontSize: 16, // Adjust the font size as needed
-                      decoration: task.status == 'complete' ? TextDecoration.lineThrough : null,
                     ),
                   ),
                 ),
-              ),
-              PopupMenuButton(
-                itemBuilder: (BuildContext context) {
-                  return [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text('Edit'),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text('Delete'),
-                    ),
-                  ];
-                },
-                onSelected: (String value) {
-                  if (value == 'edit') {
-                    _showEditDialog(task);
-                  } else if (value == 'delete') {
-                    deleteTask(task.id);
-                  }
-                },
-              ),
-            ],
-          ),
-          subtitle: Text('Deadline: ${_formatDeadline(task.deadline)}'), // Show deadline with date and time
-        );
-      } else {
-        // Return an empty container for tasks that are not under the "Date Passed" section
-        return Container();
-      }
-    },
-  );
-}
-
-
-
+                PopupMenuButton(
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit'),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
+                    ];
+                  },
+                  onSelected: (String value) {
+                    if (value == 'edit') {
+                      _showEditDialog(task);
+                    } else if (value == 'delete') {
+                      deleteTask(task.id);
+                    }
+                  },
+                ),
+              ],
+            ),
+            subtitle: Text('Deadline: ${_formatDeadline(task.deadline)}'), // Show deadline with date and time
+          );
+        } else {
+          // Return an empty container for tasks that are not under the "Date Passed" section
+          return Container();
+        }
+      },
+    );
+  }
 
   bool isTodayDeadline(String deadline) {
     DateTime today = DateTime.now();
