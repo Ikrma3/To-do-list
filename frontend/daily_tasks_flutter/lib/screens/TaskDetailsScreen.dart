@@ -35,7 +35,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Future<void> fetchTaskDetails() async {
     try {
       final response =
-          await http.get(Uri.parse('http://127.0.0.1:4000/task/${widget.taskId}'));
+          await http.get(Uri.parse('http://192.168.18.79:4000/task/${widget.taskId}'));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);

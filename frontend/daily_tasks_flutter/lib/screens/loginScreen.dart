@@ -1,10 +1,8 @@
-import 'dart:html';
-
-import 'package:daily_tasks_flutter/screens/TaskScreen.dart';
-import 'package:daily_tasks_flutter/screens/signupScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:daily_tasks_flutter/screens/signupScreen.dart';
+import 'package:daily_tasks_flutter/screens/TaskScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -28,18 +26,18 @@ class _LoginScreenState extends State<LoginScreen> {
     final String email = _emailController.text;
     final String password = _passwordController.text;
 
-     final response = await http.post(
-        Uri.parse('http://127.0.0.1:4000/login'), 
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'email': email,
-          'password': password,
-        }),
-      );
-      print("Response=");
-        print(response.statusCode);
+    final response = await http.post(
+      Uri.parse('http://192.168.18.79:4000/login'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'email': email,
+        'password': password,
+      }),
+    );
+    print("Response=");
+    print(response.statusCode);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
@@ -74,72 +72,65 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('TO DO List', style: const TextStyle(color: Colors.blue )),
+        title: Text('TO DO List', style: const TextStyle(color: Colors.blue)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Container(
-    width: 550, 
-    height: 550, 
-    child: Image.asset('images/do-list.jpeg'), // Load image from assets
-  ),
-            ),
-            SizedBox(width: 20),
-            Expanded(
-              flex: 3,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Email',
-                    style: TextStyle(fontSize: 20),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'images/do-list.jpeg',
+                  height: 150, // Adjust the height of the image
+                  width: 150, // Adjust the width of the image
+                ), // Load image from assets
+                SizedBox(height: 20),
+                Text(
+                  'Email',
+                  style: TextStyle(fontSize: 16), // Decrease the font size
+                ),
+                SizedBox(height: 5), // Decrease the height of the SizedBox
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                     contentPadding: EdgeInsets.symmetric(vertical: 10), 
                   ),
-                  SizedBox(height: 10),
-                  Container(
-                    width: 250,
-                    height: 40,
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        
-                      ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Password',
+                  style: TextStyle(fontSize: 16), // Decrease the font size
+                ),
+                SizedBox(height: 5), // Decrease the height of the SizedBox
+                TextField(
+                  
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                     contentPadding: EdgeInsets.symmetric(vertical: 10), 
+                  ),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _login,
+                  child: Text('Login', style: TextStyle(
+                  color: Colors.white,
+                ),),
+                style: ElevatedButton.styleFrom(
+                    primary: Colors.black, // Change button color to black
+                  ),
+                ),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => SignupScreen(),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Password',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    width: 250,
-                    height: 40,
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _login,
-                    child: Text('Login'),
-                  ),
-                  SizedBox(height: 30),
-                   GestureDetector(
-                   onTap: () =>  Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => SignupScreen(),
-      ),
-    ),
                   child: Container(
                     child: const Text(
                       "Sign Up.",
@@ -150,13 +141,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
-                ],
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-

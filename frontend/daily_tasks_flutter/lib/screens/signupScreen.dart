@@ -21,7 +21,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final String password = _passwordController.text;
 
     final response = await http.post(
-      Uri.parse('http://127.0.0.1:4000/signup'),
+      Uri.parse('http://192.168.18.79:4000/signup'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -35,21 +35,20 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (response.statusCode == 201) {
       final data = jsonDecode(response.body);
-         showDialog(
+      showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Signup Sucesse'),
-            content: Text('You are Sucessesfully Registered'),
+            title: Text('Signup Success'),
+            content: Text('You are Successfully Registered'),
             actions: <Widget>[
               ElevatedButton(
-                onPressed: () =>  Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => LoginScreen(),
-      ),
-    ),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => LoginScreen(),
+                  ),
+                ),
                 child: Text('OK'),
-                
               ),
             ],
           );
@@ -57,12 +56,12 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     } else {
       final data = jsonDecode(response.body);
-    final errorMessage = data['message'];
-         showDialog(
+      final errorMessage = data['message'];
+      showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Login Failed'),
+            title: Text('Signup Failed'),
             content: Text(errorMessage),
             actions: <Widget>[
               ElevatedButton(
@@ -82,72 +81,77 @@ class _SignupScreenState extends State<SignupScreen> {
       appBar: AppBar(
         title: Text('Signup'),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 350,
-                    height: 40,
-                child: Text("SIGN UP ",style: TextStyle(fontSize: 35),),
-              ),
-              SizedBox(height: 25,),
-              Container(
-                 width: 350,
-                    height: 40,
-                child: TextField(
-                  controller: _firstNameController,
-                  decoration: InputDecoration(
-                    labelText: 'First Name',
-                    border: OutlineInputBorder(),
+      body: SingleChildScrollView( // Wrap with SingleChildScrollView
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 350,
+                  height: 40,
+                  child: Text(
+                    "SIGN UP ",
+                    style: TextStyle(fontSize: 35),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                   width: 350,
-                    height: 40,
-                child: TextField(
-                  controller: _lastNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Last Name',
-                    border: OutlineInputBorder(),
+                SizedBox(height: 25,),
+                Container(
+                  width: 350,
+                  height: 40,
+                  child: TextField(
+                    controller: _firstNameController,
+                    decoration: InputDecoration(
+                      labelText: 'First Name',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                 width: 350,
-                    height: 40,
-                child: TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
+                SizedBox(height: 20),
+                Container(
+                  width: 350,
+                  height: 40,
+                  child: TextField(
+                    controller: _lastNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Last Name',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                 width: 350,
-                    height: 40,
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
+                SizedBox(height: 20),
+                Container(
+                  width: 350,
+                  height: 40,
+                  child: TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _signup,
-                child: Text('Submit'),
-              ),
-            ],
+                SizedBox(height: 20),
+                Container(
+                  width: 350,
+                  height: 40,
+                  child: TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _signup,
+                  child: Text('Submit'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
