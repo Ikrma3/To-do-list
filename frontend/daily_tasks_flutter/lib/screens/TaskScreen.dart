@@ -154,7 +154,7 @@ class _TaskScreenState extends State<TaskScreen> {
           ? Center(child: Text('Error fetching tasks'))
           : ListView(
               children: [
-                _buildTasksHeading('Today'),
+                _buildTasksHeading('Today',),
                 _buildTaskList(
                     'Today', tasks.where((task) => isTodayDeadline(task.deadline) && (showCompletedTasks || task.status != 'complete')).toList()),
                 SizedBox(height: 20),
