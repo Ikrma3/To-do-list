@@ -63,30 +63,6 @@ class _TaskScreenState extends State<TaskScreen> {
     super.didUpdateWidget(oldWidget);
     fetchTasks(); // Fetch tasks whenever the widget is updated
   }
- Future<void> scheduleNotificationsForTasks(List<Task> tasks) async {
-    final DateTime now = DateTime.now();
-    final DateTime fiveMinutesLater = now.add(Duration(minutes: 5));
-
-    // Iterate over tasks to check for deadlines
-    for (final task in tasks) {
-      // Check if notification has already been shown for this task in the current session
-      if (!notifiedTaskIds.contains(task.id)) {
-        final DateTime taskDeadline = DateTime.parse(task.deadline);
-        // Check if the task deadline is within 5 minutes from now
-        if (taskDeadline.isAfter(now) && taskDeadline.isBefore(fiveMinutesLater)) {
-          await _scheduleNotification(task.name, 'Deadline is after 5 minutes');
-          // Add the task ID to the set of notified tasks
-          notifiedTaskIds.add(task.id);
-        }
-      }
-    }
-    
-    // If no tasks with deadlines after 5 minutes were found, clear notifiedTaskIds
-    if (tasks.every((task) => !DateTime.parse(task.deadline).isAfter(fiveMinutesLater))) {
-      notifiedTaskIds.clear();
-    }
-  }
-
 Future<void> _scheduleNotification(String title, String body) async {
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
@@ -110,14 +86,14 @@ Future<void> _scheduleNotification(String title, String body) async {
 }
 
 
-  Future<void> fetchTasks() async {
-  setState(() {
-    isLoading = true;
-  });
+   Future<void> fetchTasks() async {
+    setState(() {
+      isLoading = true;
+    });
 
-  try {
-    final response = await http.get(Uri.parse('${Constants.baseUrl}tasks/${widget.userId}'));
- if (response.statusCode == 200) {
+    try {
+      final response = await http.get(Uri.parse('${Constants.baseUrl}tasks/${widget.userId}'));
+      if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
         final List<Task> fetchedTasks = responseData.map((taskJson) => Task.fromJson(taskJson)).toList();
         setState(() {
@@ -127,7 +103,7 @@ Future<void> _scheduleNotification(String title, String body) async {
         });
 
         // Schedule notifications for fetched tasks
-        _checkAndScheduleNotifications();
+        scheduleNotificationsForTasks(tasks);
       } else {
         setState(() {
           isLoading = false;
@@ -135,15 +111,31 @@ Future<void> _scheduleNotification(String title, String body) async {
         });
         print('Failed to fetch tasks. Status code: ${response.statusCode}');
       }
-
-  } catch (error) {
-    setState(() {
-      isLoading = false;
-      isError = true;
-    });
-    print('Error fetching tasks: $error');
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+        isError = true;
+      });
+      print('Error fetching tasks: $error');
+    }
   }
-}
+
+  Future<void> scheduleNotificationsForTasks(List<Task> tasks) async {
+    final DateTime now = DateTime.now();
+    final DateTime fiveMinutesLater = now.add(Duration(minutes: 5));
+
+    // Iterate over tasks to check for deadlines
+    for (final task in tasks) {
+      final DateTime taskDeadline = DateTime.parse(task.deadline);
+      // Check if the task is due today and notification hasn't been shown yet
+      if (isTodayDeadline(task.deadline) && !notifiedTaskIds.contains(task.id)) {
+        await _scheduleNotification(task.name, 'Deadline is today');
+        // Add the task ID to the set of notified tasks
+        notifiedTaskIds.add(task.id);
+      }
+    }
+  }
+
 
   Future<void> toggleTaskStatus(String taskId, bool isComplete) async {
     final String newStatus = isComplete ? 'complete' : 'pending';

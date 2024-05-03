@@ -58,26 +58,37 @@ exports.createTask = async (req, res) => {
       res.status(500).json({ error: 'Server error' });
     }
   };
-exports.getTaskDetailsById = async (req, res) => {
-  const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
-  try {
+  exports.getTaskDetailsById = async (req, res) => {
+    const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
+    try {
       // Fetch the task details from the database by ID
       const task = await Task.findById(taskId);
-
+  
       // Check if the task exists
       if (!task) {
-          return res.status(404).json({ error: 'Task not found' });
+        return res.status(404).json({ error: 'Task not found' });
       }
+  
       // Extract task details for display
       const { taskName, taskDetails, deadline } = task;
-
-      // Send response with the task details
-      res.status(200).json({ taskName, taskDetails, deadline });
-  } catch (err) {
+  
+      // Fetch tasks with deadlines due today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set time to the beginning of the day
+      const tasksDueToday = await Task.find({
+        deadline: {
+          $gte: today, // Deadline is today or in the future
+          $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) // Deadline is before tomorrow
+        }
+      });
+  
+      // Send response with the task details and tasks due today
+      res.status(200).json({ taskName, taskDetails, deadline, tasksDueToday });
+    } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Server error' });
-  }
-};
+    }
+  };
   exports.updateTask = async (req, res) => {
     const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
     const { deadline} = req.body;
