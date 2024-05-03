@@ -1,3 +1,4 @@
+import 'package:daily_tasks_flutter/constants/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -26,7 +27,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.18.79:4000/tasks'),
+        Uri.parse('${Constants.baseUrl}tasks'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

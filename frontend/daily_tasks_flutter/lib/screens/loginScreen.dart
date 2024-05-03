@@ -1,3 +1,4 @@
+import 'package:daily_tasks_flutter/constants/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -27,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final String password = _passwordController.text;
 
     final response = await http.post(
-      Uri.parse('http://192.168.18.79:4000/login'),
+      Uri.parse('${Constants.baseUrl}login'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

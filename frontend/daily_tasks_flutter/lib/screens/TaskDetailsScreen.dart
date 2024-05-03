@@ -1,3 +1,4 @@
+import 'package:daily_tasks_flutter/constants/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -35,7 +36,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Future<void> fetchTaskDetails() async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.18.79:4000/task/${widget.taskId}'));
+          await http.get(Uri.parse('${Constants.baseUrl}task/${widget.taskId}'));
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
