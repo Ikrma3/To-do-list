@@ -23,12 +23,14 @@ class _TaskScreenState extends State<TaskScreen> {
   List<Task> tasks = [];
   bool isLoading = true;
   bool isError = false;
+ int  tasksDueTodayCount=0;
     Set<String> notifiedTaskIds = Set();
 
   @override
   void initState() {
     super.initState();
     fetchTasks(); 
+     fetchTasksDueTodayCount();
     _notificationTimer = Timer.periodic(Duration(minutes: 1), (timer) {
       _checkAndScheduleNotifications();
     });
@@ -85,7 +87,6 @@ Future<void> _scheduleNotification(String title, String body) async {
   );
 }
 
-
    Future<void> fetchTasks() async {
     setState(() {
       isLoading = true;
@@ -103,7 +104,6 @@ Future<void> _scheduleNotification(String title, String body) async {
         });
 
         // Schedule notifications for fetched tasks
-        scheduleNotificationsForTasks(tasks);
       } else {
         setState(() {
           isLoading = false;
@@ -119,21 +119,27 @@ Future<void> _scheduleNotification(String title, String body) async {
       print('Error fetching tasks: $error');
     }
   }
+   Future<void> fetchTasksDueTodayCount() async {
+  try {
+    final response = await http.get(Uri.parse('${Constants.baseUrl}tasks/notifications/${widget.userId}'));
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      final int tasksDueTodayCount = responseData['tasksDueTodayCount'] as int; // Parse count as integer
+      setState(() {
+        this.tasksDueTodayCount = tasksDueTodayCount;
+      });
+      scheduleNotificationsForTasksToday(tasksDueTodayCount); // Pass integer count
 
-  Future<void> scheduleNotificationsForTasks(List<Task> tasks) async {
-    final DateTime now = DateTime.now();
-    final DateTime fiveMinutesLater = now.add(Duration(minutes: 5));
-
-    // Iterate over tasks to check for deadlines
-    for (final task in tasks) {
-      final DateTime taskDeadline = DateTime.parse(task.deadline);
-      // Check if the task is due today and notification hasn't been shown yet
-      if (isTodayDeadline(task.deadline) && !notifiedTaskIds.contains(task.id)) {
-        await _scheduleNotification(task.name, 'Deadline is today');
-        // Add the task ID to the set of notified tasks
-        notifiedTaskIds.add(task.id);
-      }
+    } else {
+      print('Failed to fetch tasks due today count. Status code: ${response.statusCode}');
     }
+  } catch (error) {
+    print('Error fetching tasks due today count: $error');
+  }
+}
+  Future<void> scheduleNotificationsForTasksToday(int tasksCount) async {
+     await _scheduleNotification("Tasks Due Today", 'You have $tasksCount tasks due today');
+     
   }
 
 

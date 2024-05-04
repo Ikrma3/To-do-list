@@ -5,6 +5,7 @@ const taskController = require('../controller/controller');
 router.post('/tasks', taskController.createTask);
 // Route to get all tasks
 router.get('/tasks/:userId', taskController.getTaskDataForDisplay);
+router.get('/tasks/notifications/:userId', taskController.countTasksDueToday);
 // Route to get details of a specific task by ID
 router.get('/task/:id', taskController.getTaskDetailsById);
 // Route to update a task by ID

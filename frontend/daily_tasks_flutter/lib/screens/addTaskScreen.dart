@@ -215,52 +215,57 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                     )
                   : 
-                  Row(
-                    children: [
-                      Text("Hours",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),),
-                      SizedBox(width: 10,),
-                      GestureDetector(
-                          onTap: () async {
-                            final pickedTime = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-                            );
-                            if (pickedTime != null) {
-                              setState(() {
-                                _selectedDateTime = DateTime(
-                                  _selectedDateTime.year,
-                                  _selectedDateTime.month,
-                                  _selectedDateTime.day,
-                                  pickedTime.hour,
-                                  pickedTime.minute,
-                                );
-                              });
-                            }
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${_selectedDateTime.hour}:${_selectedDateTime.minute}',
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                                Icon(Icons.arrow_drop_down),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                 Row(
+  children: [
+    Text("Hours",
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+      ),
+    ),
+    SizedBox(width: 10,),
+    GestureDetector(
+      onTap: () async {
+        final pickedTime = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+        );
+        if (pickedTime != null) {
+          setState(() {
+            // Create a new DateTime object with the selected time
+            _selectedDateTime = DateTime(
+              _selectedDateTime.year,
+              _selectedDateTime.month,
+              _selectedDateTime.day,
+              // Convert the selected time to 24-hour format
+              pickedTime.hour > 12 ? pickedTime.hour : pickedTime.hour + 12,
+              pickedTime.minute,
+            );
+          });
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              // Update the text to show the selected time in 24-hour format
+              '${_selectedDateTime.hour}:${_selectedDateTime.minute}',
+              style: TextStyle(fontSize: 18),
+            ),
+            Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      ),
+    ),
+  ],
+),
+
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _priority,
