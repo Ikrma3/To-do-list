@@ -1,9 +1,10 @@
-import 'package:daily_tasks_flutter/constants/constants.dart';
+import 'package:daily_tasks_flutter/screens/signupScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:daily_tasks_flutter/screens/TaskScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:daily_tasks_flutter/screens/signupScreen.dart';
-import 'package:daily_tasks_flutter/screens/TaskScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -13,63 +14,79 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _userId = '';
 
-  @override
-  void dispose() {
-    super.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-  }
+  bool _isLoading = false;
+  String _errorMessage = '';
 
-  void _login() async {
-    print("Login");
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
 
-    final response = await http.post(
-      Uri.parse('${Constants.baseUrl}login'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'email': email,
-        'password': password,
-      }),
-    );
-    print("Response=");
-    print(response.statusCode);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        _userId = data['userId'];
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TaskScreen(userId: _userId),
-        ),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Login Failed'),
-            content: Text('Invalid email or password'),
-            actions: <Widget>[
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
-            ],
-          );
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.baseUrl}login'),
+        body: json.encode({
+          'email': _emailController.text,
+          'password': _passwordController.text,
+        }),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
         },
       );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final token = responseData['token'];
+
+        // Store token in shared preferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        // Navigate to task screen with token
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TaskScreen(token: token),
+          ),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Invalid email or password';
+        });
+      }
+    } catch (error) {
+      print('Error logging in: $error');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Server error';
+      });
     }
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Check if token exists, if yes navigate to TaskScreen
+    _checkTokenAndNavigate();
+  }
+
+  Future<void> _checkTokenAndNavigate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TaskScreen(token: token),
+        ),
+      );
+    }
+  }
+
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

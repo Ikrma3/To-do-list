@@ -4,9 +4,12 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const moment = require('moment');
+const expressJwt = require('express-jwt');
+const { JWT_SECRET } = require('../token.env')
 exports.createTask = async (req, res) => {
-    const { taskName, taskDetails, deadline, priority, userId } = req.body;
-    const taskStatus = 'pending';
+  const { taskName, taskDetails, deadline, priority } = req.body;
+  const userId = req.user.userId; // Extract userId from decoded token
+
     try {
       let order;
   
@@ -25,57 +28,55 @@ exports.createTask = async (req, res) => {
       else {
         order = 3;
       }
-  
       // Create the task in the database with the determined order and associated userId
       const newTask = await Task.create({
-        taskName,
-        taskDetails,
-        taskStatus,
-        deadline,
-        priority,
-        order,
-        userId// Associate the task with the provided userId
+          taskName,
+          taskDetails,
+          taskStatus: 'pending',
+          deadline,
+          priority,
+          order,
+          userId // Associate the task with the provided userId
       });
-  
+
       // Send response with status 201 and success message
       res.status(201).json({ message: 'Task created successfully', task: newTask });
-    } catch (err) {
+  } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Server error' });
+  }
+};
+
+  // Controller function to get task names and statuses
+  exports.getTaskDataForDisplay = async (req, res) => {
+    console.log("Fetching task");
+    try {
+        const userId = req.user.userId; // Extract userId from decoded token
+        // Fetch task IDs, names, statuses, priorities, and deadlines for the specified user
+        const tasks = await Task.find({ userId }, { _id: 1, taskName: 1, taskStatus: 1, priority: 1, deadline: 1 })
+            .sort({ order: 1, deadline: 1 });
+        res.status(200).json(tasks);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
     }
 };
 
-  
-  // Controller function to get task names and statuses
-  exports.getTaskDataForDisplay = async (req, res) => {
+exports.countTasksDueToday = async (req, res) => {
     try {
-      const userId = req.params.userId; // Assuming userId is passed as a route parameter
-      // Fetch task IDs, names, statuses, priorities, and deadlines for the specified user
-      const tasks = await Task.find({ userId }, { _id: 1, taskName: 1, taskStatus: 1, priority: 1, deadline: 1 })
-                               .sort({ order: 1, deadline: 1 });
-      res.status(200).json(tasks);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Server error' });
-    }
-  };
-  exports.countTasksDueToday = async (req, res) => {
-
-    try {
-        const userId = req.params.userId;
+        const userId = req.user.userId; // Extract userId from decoded token
         const tasks = await Task.find({ userId });
 
         const today = moment().startOf('day');
         const tasksDueToday = tasks.filter(task => moment(task.deadline).isSame(today, 'day'));
         const tasksDueTodayCount = tasksDueToday.length;
-        console.log("Task due today=",tasksDueTodayCount)
+        console.log("Task due today=", tasksDueTodayCount)
         res.status(200).json({ tasksDueTodayCount: tasksDueTodayCount });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 };
-  
   exports.getTaskDetailsById = async (req, res) => {
     const taskId = req.params.id; // Assuming the task ID is passed as a route parameter
     try {
@@ -201,30 +202,40 @@ exports.createTask = async (req, res) => {
     }
   };
   exports.login = async (req, res) => {
-    console.log("Login");
-   
     const { email, password } = req.body;
-    const secretKey = crypto.randomBytes(32).toString('hex');
+    console.log("Login");
+      console.log(email, password)
     try {
-      // Check if the user exists
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-  
-      // Compare the provided password with the stored hashed password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
-  
-      // Generate a JWT token for authentication
-      const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '1h' });
-  
-      // Send response with login success message, token, and user ID
-      res.status(200).json({ message: 'Login successful', token, userId: user._id });
+        // Check if the user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Compare the provided password with the stored hashed password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Generate a JWT token for authentication
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '30d' });
+          console.log("Backend toke=",token);
+        // Send response with login success message and token
+        res.status(200).json({ message: 'Login successful', token: token  });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Server error' });
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
     }
+};
+exports.authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token from "Bearer <token>" format
+  if (!token) return res.status(401).json({ message: 'Unauthorized: Missing token' });
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.status(403).json({ message: 'Forbidden: Invalid token' });
+      req.user = user;
+      next();
+  });
 };

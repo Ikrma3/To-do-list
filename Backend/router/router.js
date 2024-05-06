@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controller/controller');
-//// Route to create a new task
-router.post('/tasks', taskController.createTask);
+
+// Protected routes requiring authentication token
+
+// Route to create a new task
+router.post('/tasks',taskController.authenticateToken, taskController.createTask);
 // Route to get all tasks
-router.get('/tasks/:userId', taskController.getTaskDataForDisplay);
-router.get('/tasks/notifications/:userId', taskController.countTasksDueToday);
+router.get('/tasks', taskController.authenticateToken,taskController.getTaskDataForDisplay);
+router.get('/tasks/notifications', taskController.authenticateToken,taskController.countTasksDueToday);
 // Route to get details of a specific task by ID
 router.get('/task/:id', taskController.getTaskDetailsById);
 // Route to update a task by ID
@@ -15,7 +18,5 @@ router.put('/tasks/status/:id', taskController.updateStatus);
 router.delete('/tasks/:id', taskController.deleteTask);
 router.post('/signup', taskController.signup);
 router.post('/login', taskController.login);
-
-
 
 module.exports = router;

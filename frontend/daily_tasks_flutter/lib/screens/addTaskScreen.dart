@@ -4,11 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AddTaskScreen extends StatefulWidget {
-  final String userId;
   final VoidCallback onTaskAdded; // Callback function to trigger task list refresh
+final String token; // Add token as a parameter
 
-  AddTaskScreen({required this.userId, required this.onTaskAdded});
-
+  AddTaskScreen({required this.token,required this.onTaskAdded});
+  
   @override
   _AddTaskScreenState createState() => _AddTaskScreenState();
 }
@@ -28,7 +28,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     try {
       final response = await http.post(
         Uri.parse('${Constants.baseUrl}tasks'),
-        headers: <String, String>{
+       headers: <String, String>{
+          'Authorization': 'Bearer ${widget.token}', // Access token from widget property
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, dynamic>{
@@ -36,7 +37,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           'taskDetails': taskDetails,
           'priority': priority,
           'deadline': _selectedDateTime.toIso8601String(), // Send selected date and time to backend
-          'userId': widget.userId,
         }),
       );
 

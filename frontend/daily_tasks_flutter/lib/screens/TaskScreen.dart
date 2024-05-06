@@ -6,14 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 import '../constants/constants.dart';
 Timer? _notificationTimer;
 class TaskScreen extends StatefulWidget {
-  final String userId;
-  TaskScreen({required this.userId});
+   final String token; // Add token as a parameter
 
+  TaskScreen({required this.token}); 
   @override
   _TaskScreenState createState() => _TaskScreenState();
 }
@@ -87,41 +88,56 @@ Future<void> _scheduleNotification(String title, String body) async {
   );
 }
 
-   Future<void> fetchTasks() async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> fetchTasks() async {
+  setState(() {
+    isLoading =true;
+  });
+  try {
+    final response = await http.get(
+      Uri.parse('${Constants.baseUrl}tasks'), 
+      headers: <String, String>{
+          'Authorization': 'Bearer ${widget.token}', // Access token from widget property
+          'Content-Type': 'application/json; charset=UTF-8',
+        },// Assuming this endpoint does not require authentication
+    );
 
-    try {
-      final response = await http.get(Uri.parse('${Constants.baseUrl}tasks/${widget.userId}'));
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        final List<Task> fetchedTasks = responseData.map((taskJson) => Task.fromJson(taskJson)).toList();
-        setState(() {
-          tasks = fetchedTasks;
-          isLoading = false;
-          isError = false;
-        });
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+      final List<Task> fetchedTasks = responseData.map((taskJson) => Task.fromJson(taskJson)).toList();
+      setState(() {
+        tasks = fetchedTasks;
+        isLoading = false;
+        isError = false;
+      });
 
-        // Schedule notifications for fetched tasks
-      } else {
-        setState(() {
-          isLoading = false;
-          isError = true;
-        });
-        print('Failed to fetch tasks. Status code: ${response.statusCode}');
-      }
-    } catch (error) {
+      // Schedule notifications for fetched tasks
+    } else {
       setState(() {
         isLoading = false;
         isError = true;
       });
-      print('Error fetching tasks: $error');
+      print('Failed to fetch tasks. Status code: ${response.statusCode}');
     }
+  } catch (error) {
+    setState(() {
+      isLoading = false;
+      isError = true;
+    });
+    print('Error fetching tasks: $error');
   }
-   Future<void> fetchTasksDueTodayCount() async {
+}
+
+Future<void> fetchTasksDueTodayCount() async {
   try {
-    final response = await http.get(Uri.parse('${Constants.baseUrl}tasks/notifications/${widget.userId}'));
+    final response = await http.get(
+      Uri.parse('${Constants.baseUrl}tasks/notifications'),
+       headers: <String, String>{
+          'Authorization': 'Bearer ${widget.token}', // Access token from widget property
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+       // Assuming this endpoint does not require authentication
+    );
+
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       final int tasksDueTodayCount = responseData['tasksDueTodayCount'] as int; // Parse count as integer
@@ -255,8 +271,7 @@ Future<void> _scheduleNotification(String title, String body) async {
                 ),
                 child: Container(
                   height: 650,
-                  child: AddTaskScreen(
-                    userId: widget.userId,
+                  child: AddTaskScreen(token: widget.token,
                     onTaskAdded: () {
                       fetchTasks();
                     },
@@ -562,10 +577,14 @@ Future<void> signOutAndNavigateToLoginScreen(BuildContext context, Timer? notifi
   // Cancel any pending notifications
   await flutterLocalNotificationsPlugin.cancelAll();
 
+  // Clear token from shared preferences
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove('token');
+
+  // Navigate to LoginScreen and remove all previous routes from the stack
   Navigator.pushAndRemoveUntil(
     context,
     MaterialPageRoute(builder: (context) => LoginScreen()),
     (Route<dynamic> route) => false,
   );
 }
-
