@@ -332,7 +332,7 @@ const scheduleTaskDueTodayNotification = async () => {
     const now = moment();
 
     // Calculate the time for the next 4:31 PM
-    let notificationTime = moment().set({ hour: 17, minute: 12, second: 0, millisecond: 0 });
+    let notificationTime = moment().set({ hour: 17, minute: 54, second: 0, millisecond: 0 });
 
     // If it's already past 4:31 PM, schedule for the next day
     if (now.isAfter(notificationTime)) {

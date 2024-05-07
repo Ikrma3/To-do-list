@@ -3,6 +3,7 @@ import 'package:daily_tasks_flutter/screens/loginScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,11 +14,15 @@ Future<void> main() async {
 Future<void> _initOneSignal(BuildContext context) async {
   OneSignal.shared.setAppId("${PrivateValues.appId}");
 
-  // Check if the user is already subscribed
-  bool isSubscribed = await _checkSubscription();
-  if (!isSubscribed) {
-    // If not subscribed, ask for permission
+  // Check if the user has already been prompted for notification permission
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool hasBeenPrompted = prefs.getBool('hasBeenPrompted') ?? false;
+
+  if (!hasBeenPrompted) {
+    // If not prompted, ask for permission
     _promptForNotificationPermission(context);
+    // Update the flag to indicate that the user has been prompted
+    await prefs.setBool('hasBeenPrompted', true);
   }
 }
 
@@ -47,6 +52,7 @@ void _promptForNotificationPermission(BuildContext context) {
   // You can use dialogs, alerts, or any other UI element to prompt the user
   showDialog(
     context: context,
+    barrierDismissible: false, // Prevent dismissing the dialog by tapping outside
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text('Allow Notifications'),
@@ -62,10 +68,6 @@ void _promptForNotificationPermission(BuildContext context) {
           TextButton(
             child: Text('Yes'),
             onPressed: () {
-              // Handle subscription logic here
-              // For example, subscribe the user to notifications
-              // You can call OneSignal SDK methods to subscribe the user
-              // Once subscribed, you can close the dialog
               _handleSubscription(context);
             },
           ),
