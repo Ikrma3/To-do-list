@@ -4,8 +4,11 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const moment = require('moment');
+const fetch = require('node-fetch');
 const expressJwt = require('express-jwt');
-const { JWT_SECRET } = require('../token.env')
+const { JWT_SECRET,my_app_id,my_rest_api} = require('../token.env')
+const OneSignal = require('onesignal-node');
+const appRestApiKey = 'ODNhODkyOTUtMmMzNi00MzA0LTliZDAtNTVlM2VkNTA2YTg0';
 exports.createTask = async (req, res) => {
   const { taskName, taskDetails, deadline, priority } = req.body;
   const userId = req.user.userId; // Extract userId from decoded token
@@ -239,3 +242,121 @@ exports.authenticateToken = (req, res, next) => {
       next();
   });
 };
+const getSubscribedUsers = async () => {
+  try {
+    const url = `https://onesignal.com/api/v1/players?app_id=${my_app_id}`; // Adjust the app_id parameter
+    const headers = {
+      'Authorization': `Basic ${my_rest_api}`, // Replace with your OneSignal REST API key
+      'Content-Type': 'application/json' // Add Content-Type header
+    };
+
+    const response = await fetch(url, { headers });
+    const data = await response.json(); // Log the entire response object
+
+    // Check if the response contains the expected data structure
+    if (data && data.players && Array.isArray(data.players)) {
+      return data.players;
+    } else {
+      console.error('Unexpected response format from OneSignal API:', data);
+      return [];
+    }
+  } catch (err) {
+    console.error('Error retrieving subscribed users:', err);
+    throw err;
+  }
+};
+
+const sendTaskDueTodayNotification = async (tasksDueToday) => {
+  try {
+    // Get the list of subscribed users from OneSignal
+    const subscribedUsers = await getSubscribedUsers();
+
+    if (!subscribedUsers || subscribedUsers.length === 0) {
+      console.log('No subscribed users found.');
+      return; // Exit early if there are no subscribed users
+    }
+
+    const playerIds = subscribedUsers.map(player => player.id);
+
+    // Prepare notification contents for each subscribed user
+    const notification = {
+      app_id: `${my_app_id}`, // Replace with your OneSignal App ID
+      contents: { en: `You have ${tasksDueToday.length} tasks due today` },
+      include_player_ids: playerIds
+    };
+
+    const url = 'https://onesignal.com/api/v1/notifications';
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${my_rest_api}` // Replace with your OneSignal REST API key
+      },
+      body: JSON.stringify(notification)
+    };
+
+    // Send notification
+    const response = await fetch(url, options);
+    const data = await response.json();
+
+    if (response.ok) {
+      console.log('Notification sent:', data);
+    } else {
+      console.error('Error sending notification:', data);
+    }
+    
+  } catch (err) {
+    console.error('Error sending notification:', err);
+  }
+};
+const getTasksDueToday = async () => {
+  try {
+    // Get the current date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to midnight for accurate comparison
+
+    // Query tasks due today
+    // Assuming Task is a Mongoose model, you need to import it properly
+    const tasksDueToday = await Task.find({ deadline: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) } });
+
+    return tasksDueToday;
+  } catch (error) {
+    console.error('Error retrieving tasks due today:', error);
+    throw error; // Propagate the error to the caller
+  }
+};
+
+const scheduleTaskDueTodayNotification = async () => {
+  try {
+    // Get the current date
+    const now = moment();
+
+    // Calculate the time for the next 4:31 PM
+    let notificationTime = moment().set({ hour: 17, minute: 12, second: 0, millisecond: 0 });
+
+    // If it's already past 4:31 PM, schedule for the next day
+    if (now.isAfter(notificationTime)) {
+      notificationTime.add(1, 'day');
+    }
+
+    // Calculate delay until 4:31 PM
+    const delay = notificationTime.diff(now);
+
+    // Wait until 4:31 PM to send notification
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    // Get tasks due today
+    const tasksDueToday = await getTasksDueToday();
+
+    // Send notification with tasks due today
+    await sendTaskDueTodayNotification(tasksDueToday);
+  } catch (err) {
+    console.error('Error scheduling notification:', err);
+  } finally {
+    // Reschedule for the next day
+    setTimeout(scheduleTaskDueTodayNotification, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+  }
+};
+
+// Start scheduling notifications
+scheduleTaskDueTodayNotification();
